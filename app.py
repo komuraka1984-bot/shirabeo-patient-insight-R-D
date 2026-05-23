@@ -1,4 +1,5 @@
 import os
+import re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -12,8 +13,8 @@ import requests
 
 APP_TITLE = "Shirabeo Labs | Patient Insight"
 
-CSV_PATH_ADCT = "data/rd_adct_responses.csv"
-CSV_PATH_DLQI = "data/rd_dlqi_responses.csv"
+CSV_PATH_ADCT = Path("data/rd_adct_responses.csv")
+CSV_PATH_DLQI = Path("data/rd_dlqi_responses.csv")
 
 ADMIN_EMAIL = "komura@shirabeo.com"
 CONTACT_EMAIL = "contact@shirabeo.com"
@@ -198,6 +199,7 @@ def get_csv_path(instrument: str) -> Path:
 
 def save_result(row: dict):
     csv_path = get_csv_path(row.get("instrument", ""))
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame([row])
 
     if csv_path.exists():
@@ -652,16 +654,41 @@ def main():
         )
     )
 
+    is_adct_selected = "ADCT" in disease_mode
+    visit_code_digits = ""
+
     with st.form("questionnaire_form", clear_on_submit=False):
-        visit_code = st.text_input(
-            t(language, "匿名コード", "Anonymous visit code"),
-            placeholder=t(language, "例：AD001。空欄でも可。", "Example: AD001. Optional."),
-            help=t(
-                language,
-                "匿名コードのみ使用してください。氏名、患者ID、診察券番号は入力しないでください。",
-                "Use an anonymous code only. Do not enter name, patient ID, or medical record number.",
-            ),
-        )
+        if is_adct_selected:
+            visit_code_digits = st.text_input(
+                t(language, "匿名コード（AD + 半角数字3桁）", "Anonymous code (AD + 3 digits)"),
+                max_chars=3,
+                placeholder=t(language, "例：001", "Example: 001"),
+                help=t(
+                    language,
+                    "アトピー性皮膚炎では、患者さんは半角数字3桁のみを入力してください。アプリ側で自動的に AD001 のような匿名コードとして保存します。氏名、患者ID、診察券番号は入力しないでください。",
+                    "For atopic dermatitis, enter 3 half-width digits only. The app will automatically save it as an anonymous code such as AD001. Do not enter name, patient ID, or medical record number.",
+                ),
+            )
+
+            if visit_code_digits and re.fullmatch(r"[0-9]{3}", visit_code_digits):
+                visit_code = f"AD{visit_code_digits}"
+                st.caption(t(language, f"保存される匿名コード：{visit_code}", f"Anonymous code to be saved: {visit_code}"))
+            elif visit_code_digits:
+                visit_code = ""
+                st.error(t(language, "匿名コードは半角数字3桁で入力してください。例：001", "Please enter exactly 3 half-width digits. Example: 001"))
+            else:
+                visit_code = ""
+                st.caption(t(language, "受付で案内された半角数字3桁を入力してください。", "Please enter the 3-digit number provided by the clinic."))
+        else:
+            visit_code = st.text_input(
+                t(language, "匿名コード", "Anonymous visit code"),
+                placeholder=t(language, "例：PS001。空欄でも可。", "Example: PS001. Optional."),
+                help=t(
+                    language,
+                    "匿名コードのみ使用してください。氏名、患者ID、診察券番号は入力しないでください。",
+                    "Use an anonymous code only. Do not enter name, patient ID, or medical record number.",
+                ),
+            )
 
         st.divider()
 
@@ -693,6 +720,18 @@ def main():
                 )
             )
             st.stop()
+
+        if result["instrument"] == "ADCT":
+            if not re.fullmatch(r"[0-9]{3}", visit_code_digits or ""):
+                st.error(
+                    t(
+                        language,
+                        "アトピー性皮膚炎の匿名コードは、半角数字3桁のみで入力してください。例：001",
+                        "For atopic dermatitis, please enter exactly 3 half-width digits. Example: 001",
+                    )
+                )
+                st.stop()
+            visit_code = f"AD{visit_code_digits}"
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
