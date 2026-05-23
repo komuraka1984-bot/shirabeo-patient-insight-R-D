@@ -12,8 +12,8 @@ import requests
 
 APP_TITLE = "Shirabeo Labs | Patient Insight"
 
-CSV_PATH_ADCT = Path("adct_results.csv")
-CSV_PATH_DLQI = Path("dlqi_results.csv")
+CSV_PATH_ADCT = "data/rd_adct_responses.csv"
+CSV_PATH_DLQI = "data/rd_dlqi_responses.csv"
 
 ADMIN_EMAIL = "komura@shirabeo.com"
 CONTACT_EMAIL = "contact@shirabeo.com"
