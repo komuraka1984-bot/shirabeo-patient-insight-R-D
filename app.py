@@ -594,8 +594,99 @@ def render_adct(language: str):
     }
 
 
+def clinician_priority_label(row: pd.Series, instrument_label: str) -> tuple[str, str]:
+    """
+    医療者確認画面だけで使う表示用ラベル。
+    CSVの保存形式や患者入力ロジックには影響しません。
+    """
+    decision = str(row.get("decision", "") or "")
+    try:
+        total_score = int(float(row.get("total_score", 0)))
+    except Exception:
+        total_score = 0
+
+    if instrument_label == "ADCT":
+        if decision == "非維持" or total_score >= 7:
+            return "確認優先", "🔴"
+        return "通常確認", "🟢"
+
+    # DLQIは診断・治療判断ではなく、生活影響の大きさを見落とさないための表示用。
+    if total_score >= 21:
+        return "生活影響：極めて大", "🔴"
+    if total_score >= 11:
+        return "生活影響：大", "🟠"
+    if total_score >= 6:
+        return "生活影響：中等度", "🟡"
+    return "通常確認", "🟢"
+
+
+def format_clinician_value(value) -> str:
+    if pd.isna(value):
+        return ""
+    return str(value)
+
+
+def render_clinician_submission_card(row: pd.Series, instrument_label: str, index: int):
+    priority_text, priority_icon = clinician_priority_label(row, instrument_label)
+
+    timestamp = format_clinician_value(row.get("timestamp", ""))
+    visit_code = format_clinician_value(row.get("visit_code", ""))
+    total_score = format_clinician_value(row.get("total_score", ""))
+    max_score = format_clinician_value(row.get("max_score", ""))
+    severity = format_clinician_value(row.get("severity", ""))
+    decision = format_clinician_value(row.get("decision", ""))
+    previous_adct = format_clinician_value(row.get("previous_adct", ""))
+    delta_adct = format_clinician_value(row.get("delta_adct", ""))
+    decision_reasons = format_clinician_value(row.get("decision_reasons", ""))
+
+    with st.container():
+        st.markdown(f"### {priority_icon} {priority_text}　#{index + 1}")
+        c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.2, 1.4])
+
+        c1.metric("匿名コード", visit_code or "未入力")
+        c2.metric("スコア", f"{total_score} / {max_score}")
+        c3.metric("結果表示", decision or severity or "—")
+        c4.metric("送信日時", timestamp or "—")
+
+        if instrument_label == "ADCT":
+            if previous_adct:
+                st.caption(f"前回ADCT: {previous_adct}　/　変化量 Δ: {delta_adct or '—'}")
+            if decision_reasons:
+                st.warning(f"確認理由：{decision_reasons}")
+            elif decision == "維持":
+                st.success("非維持条件には該当していません。通常診療の中で確認してください。")
+        else:
+            if severity:
+                st.info(f"DLQI解釈：{severity}")
+
+        score_cols = [col for col in row.index if re.fullmatch(r"q\d+_score", str(col))]
+        score_cols = sorted(score_cols, key=lambda x: int(re.findall(r"\d+", x)[0]))
+
+        if score_cols:
+            score_text = " / ".join([f"{col.replace('_score', '').upper()}={format_clinician_value(row.get(col, ''))}" for col in score_cols])
+            st.caption(score_text)
+
+        with st.expander("回答詳細を表示"):
+            detail_rows = []
+            for col in score_cols:
+                q_num = re.findall(r"\d+", col)[0]
+                answer_col = f"q{q_num}_answer"
+                detail_rows.append({
+                    "項目": f"Q{q_num}",
+                    "スコア": format_clinician_value(row.get(col, "")),
+                    "回答": format_clinician_value(row.get(answer_col, "")),
+                })
+
+            if detail_rows:
+                st.dataframe(pd.DataFrame(detail_rows), hide_index=True, use_container_width=True)
+            else:
+                st.caption("項目別データがありません。")
+
+        st.divider()
+
+
 def show_csv_tab(label: str, csv_path: Path, file_name: str):
-    st.subheader(label)
+    st.subheader(f"{label} 送信結果")
 
     if not csv_path.exists():
         st.info(f"{label}データはまだありません。")
@@ -612,10 +703,116 @@ def show_csv_tab(label: str, csv_path: Path, file_name: str):
 
     try:
         df = pd.read_csv(csv_path, on_bad_lines="skip")
-        st.dataframe(df.tail(30), use_container_width=True)
     except Exception as e:
         st.warning(f"{label} CSVの読み込みに失敗しました。")
         st.caption(str(e))
+        return
+
+    if df.empty:
+        st.info(f"{label}データはまだありません。")
+        return
+
+    df = df.copy()
+
+    if "timestamp" in df.columns:
+        df["_timestamp_dt"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        df = df.sort_values("_timestamp_dt", ascending=False, na_position="last")
+    else:
+        df["_timestamp_dt"] = pd.NaT
+        df = df.iloc[::-1]
+
+    today = datetime.now().date()
+    valid_dates = df["_timestamp_dt"].dropna()
+
+    total_count = len(df)
+    today_count = int((df["_timestamp_dt"].dt.date == today).sum()) if not valid_dates.empty else 0
+    latest_time = (
+        df["_timestamp_dt"].dropna().max().strftime("%Y-%m-%d %H:%M")
+        if not valid_dates.empty
+        else "不明"
+    )
+
+    priority_flags = df.apply(lambda r: clinician_priority_label(r, label)[0] != "通常確認", axis=1)
+    priority_count = int(priority_flags.sum())
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("全送信数", total_count)
+    m2.metric("本日の送信", today_count)
+    m3.metric("確認優先", priority_count)
+    m4.metric("最新送信", latest_time)
+
+    st.markdown("#### 絞り込み")
+
+    f1, f2 = st.columns([1, 1])
+
+    visit_query = f1.text_input(
+        "匿名コードで検索",
+        placeholder="例：AD001",
+        key=f"{label}_visit_query",
+    )
+
+    priority_only = f2.checkbox(
+        "確認優先のみ表示",
+        key=f"{label}_priority_only",
+    )
+
+    filtered = df.copy()
+
+    if visit_query and "visit_code" in filtered.columns:
+        filtered = filtered[
+            filtered["visit_code"].astype(str).str.contains(visit_query, case=False, na=False)
+        ]
+
+    if not valid_dates.empty:
+        min_date = valid_dates.min().date()
+        max_date = valid_dates.max().date()
+        date_range = st.date_input(
+            "日付範囲",
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date,
+            key=f"{label}_date_range",
+        )
+
+        if isinstance(date_range, tuple) and len(date_range) == 2:
+            start_date, end_date = date_range
+            filtered = filtered[
+                (filtered["_timestamp_dt"].dt.date >= start_date)
+                & (filtered["_timestamp_dt"].dt.date <= end_date)
+            ]
+
+    if priority_only:
+        filtered = filtered[
+            filtered.apply(lambda r: clinician_priority_label(r, label)[0] != "通常確認", axis=1)
+        ]
+
+    st.caption(f"表示件数：{len(filtered)} / {len(df)}")
+
+    st.markdown("#### 最新の送信結果")
+
+    max_cards = min(20, len(filtered))
+    if max_cards == 0:
+        st.info("条件に一致する送信結果はありません。")
+    else:
+        display_count = st.slider(
+            "カード表示件数",
+            min_value=1,
+            max_value=max_cards,
+            value=min(5, max_cards),
+            key=f"{label}_display_count",
+        )
+
+        for i, (_, row) in enumerate(filtered.head(display_count).iterrows()):
+            render_clinician_submission_card(row, label, i)
+
+    with st.expander("一覧表で確認する"):
+        display_df = filtered.drop(columns=["_timestamp_dt"], errors="ignore")
+        st.dataframe(display_df, use_container_width=True)
+
+    st.caption(
+        "この画面は送信結果を見やすく整理するための医療者向け確認画面です。"
+        "表示内容のみを整理しており、患者入力・保存データ・判定ロジックは変更していません。"
+    )
 
 
 def main():
@@ -870,7 +1067,7 @@ def main():
 
     if show_admin:
         with st.expander(
-            t(language, "医療者用：CSV確認・ダウンロード", "Clinician view: CSV review and download")
+            t(language, "医療者用：送信結果確認・CSVダウンロード", "Clinician view: submission review and CSV download")
         ):
             admin_password = st.text_input(
                 t(language, "管理者パスワード", "Admin password"),
