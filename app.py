@@ -794,13 +794,19 @@ def show_csv_tab(label: str, csv_path: Path, file_name: str):
     if max_cards == 0:
         st.info("条件に一致する送信結果はありません。")
     else:
-        display_count = st.slider(
-            "カード表示件数",
-            min_value=1,
-            max_value=max_cards,
-            value=min(5, max_cards),
-            key=f"{label}_display_count",
-        )
+        # Streamlit の slider は min_value と max_value が同じだとエラーになるため、
+        # 表示対象が1件だけのときは slider を出さずに1件表示に固定します。
+        if max_cards == 1:
+            display_count = 1
+            st.caption("カード表示件数：1件")
+        else:
+            display_count = st.slider(
+                "カード表示件数",
+                min_value=1,
+                max_value=max_cards,
+                value=min(5, max_cards),
+                key=f"{label}_display_count",
+            )
 
         for i, (_, row) in enumerate(filtered.head(display_count).iterrows()):
             render_clinician_submission_card(row, label, i)
