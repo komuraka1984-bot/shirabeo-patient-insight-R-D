@@ -3,7 +3,7 @@ import re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -20,6 +20,8 @@ ADMIN_EMAIL = "komura@shirabeo.com"
 CONTACT_EMAIL = "contact@shirabeo.com"
 
 APP_VERSION = "Patient Insight Demo v0.9"
+
+JST = timezone(timedelta(hours=9))
 
 
 def send_to_google_form(row):
@@ -849,7 +851,7 @@ def show_csv_tab(label: str, csv_path: Path, file_name: str):
         df["_timestamp_dt"] = pd.NaT
         df = df.iloc[::-1]
 
-    today = datetime.now().date()
+    today = datetime.now(JST).date()
     valid_dates = df["_timestamp_dt"].dropna()
 
     total_count = len(df)
@@ -1050,7 +1052,7 @@ def main():
         "questionnaire_started_at" not in st.session_state
         or st.session_state.get("questionnaire_timer_disease_mode") != disease_mode
     ):
-        st.session_state["questionnaire_started_at"] = datetime.now().isoformat()
+        st.session_state["questionnaire_started_at"] = datetime.now(JST).isoformat()
         st.session_state["questionnaire_timer_disease_mode"] = disease_mode
 
     is_adct_selected = "ADCT" in disease_mode
@@ -1132,7 +1134,7 @@ def main():
                 st.stop()
             visit_code = f"AD{visit_code_digits}"
 
-        now_dt = datetime.now()
+        now_dt = datetime.now(JST)
         now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
         input_started_at = st.session_state.get("questionnaire_started_at", "")
@@ -1198,7 +1200,7 @@ def main():
         save_result(row)
         send_to_google_form(row)
 
-        st.session_state["questionnaire_started_at"] = datetime.now().isoformat()
+        st.session_state["questionnaire_started_at"] = datetime.now(JST).isoformat()
         st.session_state["questionnaire_timer_disease_mode"] = disease_mode
 
         st.success(t(language, "送信されました。", "Submitted successfully."))
