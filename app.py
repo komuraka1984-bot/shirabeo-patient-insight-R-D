@@ -579,6 +579,47 @@ def render_adct(language: str):
         answers.append(answer)
         st.write("")
 
+    st.markdown("---")
+    st.markdown(
+        t(
+            language,
+            "**試験運用に関する確認項目**",
+            "**Pilot-operation questions**",
+        )
+    )
+
+    input_support_options = [
+        t(language, "自分で最後まで入力した", "Completed all entries by myself"),
+        t(language, "病院スタッフの説明・補助を受けながら、自分で入力した", "Completed by myself with explanation or support from hospital staff"),
+        t(language, "病院スタッフが代わりに入力した", "Hospital staff entered the responses on my behalf"),
+        t(language, "家族・付き添いの方が代わりに入力した", "A family member or accompanying person entered the responses on my behalf"),
+    ]
+    input_support = st.radio(
+        t(
+            language,
+            "この質問票の入力はどのように行いましたか？",
+            "How was this questionnaire entered?",
+        ),
+        input_support_options,
+        key=f"adct_input_support_{language}",
+    )
+
+    input_ease_options = [
+        t(language, "とても簡単だった", "Very easy"),
+        t(language, "簡単だった", "Easy"),
+        t(language, "やや難しかった", "Somewhat difficult"),
+        t(language, "難しかった", "Difficult"),
+    ]
+    input_ease = st.radio(
+        t(
+            language,
+            "今回の入力はどう感じましたか？",
+            "How easy or difficult was this entry process?",
+        ),
+        input_ease_options,
+        key=f"adct_input_ease_{language}",
+    )
+
     total = int(sum(scores))
     severity, interpretation = interpret_adct(total, language)
 
@@ -591,6 +632,8 @@ def render_adct(language: str):
         "interpretation": interpretation,
         "scores": scores,
         "answers": answers,
+        "input_support": input_support,
+        "input_ease": input_ease,
     }
 
 
@@ -1003,6 +1046,13 @@ def main():
         )
     )
 
+    if (
+        "questionnaire_started_at" not in st.session_state
+        or st.session_state.get("questionnaire_timer_disease_mode") != disease_mode
+    ):
+        st.session_state["questionnaire_started_at"] = datetime.now().isoformat()
+        st.session_state["questionnaire_timer_disease_mode"] = disease_mode
+
     is_adct_selected = "ADCT" in disease_mode
     visit_code_digits = ""
 
@@ -1082,7 +1132,21 @@ def main():
                 st.stop()
             visit_code = f"AD{visit_code_digits}"
 
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_dt = datetime.now()
+        now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        input_started_at = st.session_state.get("questionnaire_started_at", "")
+        input_duration_seconds = None
+        input_duration_minutes = None
+
+        if input_started_at:
+            try:
+                started_dt = datetime.fromisoformat(str(input_started_at))
+                input_duration_seconds = round((now_dt - started_dt).total_seconds(), 1)
+                input_duration_minutes = round(input_duration_seconds / 60, 2)
+            except Exception:
+                input_duration_seconds = None
+                input_duration_minutes = None
 
         previous_adct = None
         delta_adct = None
@@ -1118,6 +1182,12 @@ def main():
             "delta_adct": delta_adct,
             "decision": decision,
             "decision_reasons": decision_reasons,
+            "input_started_at": input_started_at,
+            "input_submitted_at": now,
+            "input_duration_seconds": input_duration_seconds,
+            "input_duration_minutes": input_duration_minutes,
+            "input_support": result.get("input_support", ""),
+            "input_ease": result.get("input_ease", ""),
             "consent_checked": True,
         }
 
@@ -1127,6 +1197,9 @@ def main():
 
         save_result(row)
         send_to_google_form(row)
+
+        st.session_state["questionnaire_started_at"] = datetime.now().isoformat()
+        st.session_state["questionnaire_timer_disease_mode"] = disease_mode
 
         st.success(t(language, "送信されました。", "Submitted successfully."))
 
