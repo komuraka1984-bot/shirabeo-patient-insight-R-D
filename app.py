@@ -43,60 +43,8 @@ def send_to_google_form(row):
         return False
 
 
-DLQI_QUESTIONS_JA = [
-    "この1週間で、皮膚のかゆみ・痛み・ヒリヒリ感・しみる感じはどの程度ありましたか？",
-    "この1週間で、皮膚のために恥ずかしい、または人目が気になると感じたことはどの程度ありましたか？",
-    "この1週間で、皮膚のために買い物、家事、庭仕事などにどの程度支障がありましたか？",
-    "この1週間で、皮膚のために着る服にどの程度影響がありましたか？",
-    "この1週間で、皮膚のために社交・余暇活動にどの程度影響がありましたか？",
-    "この1週間で、皮膚のためにスポーツがどの程度困難でしたか？",
-    "この1週間で、皮膚のために仕事や勉強ができませんでしたか？",
-    "この1週間で、皮膚のために配偶者、友人、家族との関係にどの程度問題がありましたか？",
-    "この1週間で、皮膚のために性的な困難がどの程度ありましたか？",
-    "この1週間で、皮膚の治療がどの程度問題になりましたか？ 例：家が汚れる、時間がかかるなど。",
-]
-
-DLQI_QUESTIONS_EN = [
-    "Over the last week, how itchy, sore, painful or stinging has your skin been?",
-    "Over the last week, how embarrassed or self-conscious have you been because of your skin?",
-    "Over the last week, how much has your skin interfered with you going shopping or looking after your home or garden?",
-    "Over the last week, how much has your skin influenced the clothes you wear?",
-    "Over the last week, how much has your skin affected any social or leisure activities?",
-    "Over the last week, how much has your skin made it difficult for you to do any sport?",
-    "Over the last week, has your skin prevented you from working or studying?",
-    "Over the last week, how much has your skin created problems with your partner or any of your close friends or relatives?",
-    "Over the last week, how much has your skin caused any sexual difficulties?",
-    "Over the last week, how much of a problem has the treatment for your skin been, for example by making your home messy, or by taking up time?",
-]
-
-DLQI_OPTIONS_JA = {
-    "全くない / 該当しない": 0,
-    "少し": 1,
-    "かなり": 2,
-    "非常に": 3,
-}
-
-DLQI_OPTIONS_EN = {
-    "Not at all / Not relevant": 0,
-    "A little": 1,
-    "A lot": 2,
-    "Very much": 3,
-}
-
-DLQI_Q7_OPTIONS_JA = {
-    "はい、仕事または勉強ができなかった": 3,
-    "いいえ、ただし仕事または勉強に支障があった": 2,
-    "いいえ": 0,
-    "該当しない": 0,
-}
-
-DLQI_Q7_OPTIONS_EN = {
-    "Yes — prevented work or studying": 3,
-    "No, but skin was a problem at work or studying": 2,
-    "No": 0,
-    "Not relevant": 0,
-}
-
+# DLQI module is intentionally disabled while digital-use licensing conditions are under review.
+# DLQI question wording, response options, scoring, and result calculation are not included in this app version.
 
 ADCT_QUESTIONS_JA = [
     "この1週間、アトピー性皮膚炎の症状はどの程度でしたか。",
@@ -148,33 +96,6 @@ def t(language: str, ja: str, en: str) -> str:
     return ja if language == "日本語" else en
 
 
-def interpret_dlqi(score: int, language: str) -> tuple[str, str]:
-    if score <= 1:
-        return (
-            t(language, "影響なし", "No effect"),
-            t(language, "生活への明らかな影響はほとんどありません。", "No measurable effect on the patient's life."),
-        )
-    if score <= 5:
-        return (
-            t(language, "軽度の影響", "Small effect"),
-            t(language, "生活への影響は軽度です。", "Small effect on the patient's life."),
-        )
-    if score <= 10:
-        return (
-            t(language, "中等度の影響", "Moderate effect"),
-            t(language, "生活への影響は中等度です。", "Moderate effect on the patient's life."),
-        )
-    if score <= 20:
-        return (
-            t(language, "非常に大きな影響", "Very large effect"),
-            t(language, "生活への影響は非常に大きい状態です。", "Very large effect on the patient's life."),
-        )
-    return (
-        t(language, "極めて大きな影響", "Extremely large effect"),
-        t(language, "生活への影響は極めて大きい状態です。", "Extremely large effect on the patient's life."),
-    )
-
-
 def interpret_adct(score: int, language: str) -> tuple[str, str]:
     if score >= 7:
         return (
@@ -196,7 +117,8 @@ def interpret_adct(score: int, language: str) -> tuple[str, str]:
 
 
 def get_csv_path(instrument: str) -> Path:
-    return CSV_PATH_ADCT if instrument == "ADCT" else CSV_PATH_DLQI
+    # DLQI submission is disabled in this version.
+    return CSV_PATH_ADCT
 
 
 def save_result(row: dict):
@@ -419,7 +341,7 @@ def render_legal_notice(language: str):
 - 通信環境、外部サービス、サーバー、ブラウザ、端末の状態により、送信遅延、保存失敗、表示不具合が生じる可能性があります。
 
 ### 5. 表示結果について
-- ADCT、DLQIなどのスコア表示は、患者報告アウトカムを整理するための補助情報です。
+- ADCT等のスコア表示は、患者報告アウトカムを整理するための補助情報です。
 - 「維持」「非維持」等の表示は、入力された回答に基づく簡易的な診療補助表示であり、医学的判断そのものではありません。
 - 表示結果が「維持」であっても、症状悪化や医療者が必要と判断する場合には、追加評価や治療方針の見直しが必要になることがあります。
 - 表示結果が「非維持」であっても、直ちに治療変更や中止を意味するものではありません。医療者が診察所見、既往歴、併存症、治療歴、検査結果、患者希望等を総合して判断してください。
@@ -428,7 +350,7 @@ def render_legal_notice(language: str):
 - ADCT、DLQI等の質問票、名称、設問文、翻訳、スコア体系、解釈基準には、第三者の著作権、商標権、ライセンス条件、使用条件が存在する場合があります。
 - 実運用、商用利用、外部提供、研究利用、出版物・講演資料での表示、企業・医療機関への提供にあたっては、必要な使用許諾、表示条件、ライセンス、引用条件を確認してください。
 - 本アプリ内での質問票表示は、試験運用・デモ・診療補助フロー検討のための実装であり、権利関係の最終確認を不要にするものではありません。
-- DLQIは皮膚疾患における生活の質への影響を把握するための指標として広く利用されていますが、外部提供・商用利用・出版・講演資料での利用条件は、必要に応じて確認してください。
+- DLQIのデジタル利用については現在ライセンス条件を確認中です。本バージョンではDLQIの設問文、回答選択肢、スコア計算、送信、保存機能は無効化しています。
 
 ### 7. 医療機器・薬機法上の位置づけ
 - 本アプリは、現時点では診断、治療、予防を単独で目的とするものではなく、医療者の確認を補助する情報整理ツールとして設計されています。
@@ -469,7 +391,7 @@ def render_legal_notice(language: str):
 - Transmission delays, storage failures, or display errors may occur depending on network conditions, external services, servers, browsers, or devices.
 
 ### 5. Displayed results
-- ADCT, DLQI, and related scores are supportive information for organizing patient-reported outcomes.
+- ADCT and related scores are supportive information for organizing patient-reported outcomes.
 - Displays such as “maintenance” or “non-maintenance” are simplified clinical-support indicators based on the entered responses and are not medical judgments themselves.
 - Even if the display indicates “maintenance,” additional assessment or treatment review may be required if symptoms worsen or if the healthcare professional considers it necessary.
 - Even if the display indicates “non-maintenance,” it does not immediately mean that treatment should be changed or stopped. Healthcare professionals should make comprehensive decisions based on examination findings, medical history, comorbidities, treatment history, test results, and patient preferences.
@@ -478,7 +400,7 @@ def render_legal_notice(language: str):
 - ADCT, DLQI, questionnaire names, question wording, translations, scoring systems, and interpretation criteria may be subject to third-party copyrights, trademarks, licenses, or usage conditions.
 - Before operational, commercial, external, research, publication, presentation, or institutional use, necessary permissions, display requirements, licenses, and citation conditions should be confirmed.
 - Display of questionnaires within this application is for pilot use, demonstration, and workflow evaluation, and does not eliminate the need for rights clearance.
-- DLQI is widely used as an index for assessing the quality-of-life impact of skin diseases, but conditions for external, commercial, publication, or presentation use should be confirmed as necessary.
+- Digital use conditions for DLQI are currently under review. In this version, DLQI question wording, response options, scoring, submission, and storage functions are disabled.
 
 ### 7. Medical device and regulatory positioning
 - This application is currently designed as an information-organization tool to support healthcare professional review and is not intended to independently diagnose, treat, or prevent disease.
@@ -525,41 +447,22 @@ def render_adct_partner_notice(language: str):
     )
 
 
-def render_dlqi(language: str):
-    questions = DLQI_QUESTIONS_JA if language == "日本語" else DLQI_QUESTIONS_EN
-    options_common = DLQI_OPTIONS_JA if language == "日本語" else DLQI_OPTIONS_EN
-    q7_options = DLQI_Q7_OPTIONS_JA if language == "日本語" else DLQI_Q7_OPTIONS_EN
-
-    scores = []
-    answers = []
-
-    for i, q in enumerate(questions, start=1):
-        st.markdown(f"**Q{i}. {q}**")
-        opts = q7_options if i == 7 else options_common
-        answer = st.radio(
-            t(language, f"Q{i}の回答", f"Answer Q{i}"),
-            list(opts.keys()),
-            key=f"dlqi_{language}_{i}",
-            label_visibility="collapsed",
+def render_dlqi_disabled_notice(language: str):
+    st.subheader(t(language, "乾癬：DLQI（準備中）", "Psoriasis: DLQI (preparation in progress)"))
+    st.warning(
+        t(
+            language,
+            "DLQIのデジタル利用に関するライセンス条件を確認中のため、現在この機能は利用できません。設問文、回答選択肢、スコア計算、送信、保存は行われません。",
+            "This feature is currently unavailable while digital-use licensing conditions for DLQI are under review. Question wording, response options, scoring, submission, and storage are not provided.",
         )
-        scores.append(opts[answer])
-        answers.append(answer)
-        st.write("")
-
-    total = int(sum(scores))
-    severity, interpretation = interpret_dlqi(total, language)
-
-    return {
-        "instrument": "DLQI",
-        "disease": "Psoriasis",
-        "total_score": total,
-        "max_score": 30,
-        "severity": severity,
-        "interpretation": interpretation,
-        "scores": scores,
-        "answers": answers,
-    }
-
+    )
+    st.caption(
+        t(
+            language,
+            "現在は、アトピー性皮膚炎：ADCTのみ利用可能です。",
+            "At this time, only Atopic dermatitis: ADCT is available.",
+        )
+    )
 
 def render_adct(language: str):
     questions = ADCT_QUESTIONS_JA if language == "日本語" else ADCT_QUESTIONS_EN
@@ -655,13 +558,6 @@ def clinician_priority_label(row: pd.Series, instrument_label: str) -> tuple[str
             return "確認優先", "🔴"
         return "通常確認", "🟢"
 
-    # DLQIは診断・治療判断ではなく、生活影響の大きさを見落とさないための表示用。
-    if total_score >= 21:
-        return "生活影響：極めて大", "🔴"
-    if total_score >= 11:
-        return "生活影響：大", "🟠"
-    if total_score >= 6:
-        return "生活影響：中等度", "🟡"
     return "通常確認", "🟢"
 
 
@@ -1016,7 +912,7 @@ def main():
     st.set_page_config(page_title=APP_TITLE, page_icon="📝", layout="centered")
 
     st.title(APP_TITLE)
-    st.caption("DLQI for psoriasis / ADCT for atopic dermatitis")
+    st.caption("ADCT for atopic dermatitis / DLQI module pending")
     st.caption(APP_VERSION)
 
     language = st.sidebar.radio("Language / 言語", ["日本語", "English"], index=0)
@@ -1034,32 +930,35 @@ def main():
     disease_mode = st.sidebar.radio(
         t(language, "疾患・質問票", "Disease / questionnaire"),
         [
-            t(language, "乾癬：DLQI", "Psoriasis: DLQI"),
+            t(language, "乾癬：DLQI（準備中）", "Psoriasis: DLQI (pending)"),
             t(language, "アトピー性皮膚炎：ADCT", "Atopic dermatitis: ADCT"),
         ],
         index=default_index,
     )
 
-    st.info(
-        t(
-            language,
-            "過去1週間を振り返って回答してください。氏名・生年月日・住所・患者ID・診察券番号などの直接個人情報は入力しないでください。",
-            "Please answer based on the last 7 days. Do not enter direct personal identifiers such as name, date of birth, address, patient ID, or medical record number.",
-        )
-    )
-
-    if (
-        "questionnaire_started_at" not in st.session_state
-        or st.session_state.get("questionnaire_timer_disease_mode") != disease_mode
-    ):
-        st.session_state["questionnaire_started_at"] = datetime.now(JST).isoformat()
-        st.session_state["questionnaire_timer_disease_mode"] = disease_mode
-
     is_adct_selected = "ADCT" in disease_mode
-    visit_code_digits = ""
 
-    with st.form("questionnaire_form", clear_on_submit=False):
-        if is_adct_selected:
+    if not is_adct_selected:
+        render_dlqi_disabled_notice(language)
+    else:
+        st.info(
+            t(
+                language,
+                "過去1週間を振り返って回答してください。氏名・生年月日・住所・患者ID・診察券番号などの直接個人情報は入力しないでください。",
+                "Please answer based on the last 7 days. Do not enter direct personal identifiers such as name, date of birth, address, patient ID, or medical record number.",
+            )
+        )
+
+        if (
+            "questionnaire_started_at" not in st.session_state
+            or st.session_state.get("questionnaire_timer_disease_mode") != disease_mode
+        ):
+            st.session_state["questionnaire_started_at"] = datetime.now(JST).isoformat()
+            st.session_state["questionnaire_timer_disease_mode"] = disease_mode
+
+        visit_code_digits = ""
+
+        with st.form("questionnaire_form", clear_on_submit=False):
             visit_code_digits = st.text_input(
                 t(language, "匿名コード（AD + 半角数字3桁）", "Anonymous code (AD + 3 digits)"),
                 max_chars=3,
@@ -1080,49 +979,35 @@ def main():
             else:
                 visit_code = ""
                 st.caption(t(language, "受付で案内された半角数字3桁を入力してください。", "Please enter the 3-digit number provided by the clinic."))
-        else:
-            visit_code = st.text_input(
-                t(language, "匿名コード", "Anonymous visit code"),
-                placeholder=t(language, "例：PS001。空欄でも可。", "Example: PS001. Optional."),
-                help=t(
-                    language,
-                    "匿名コードのみ使用してください。氏名、患者ID、診察券番号は入力しないでください。",
-                    "Use an anonymous code only. Do not enter name, patient ID, or medical record number.",
-                ),
-            )
 
-        st.divider()
+            st.divider()
 
-        if "DLQI" in disease_mode:
-            result = render_dlqi(language)
-        else:
             result = render_adct(language)
 
-        consent = st.checkbox(
-            t(
-                language,
-                "上記の注意事項を確認しました。直接個人情報を入力せず、本アプリの結果が診断・治療方針を自動決定するものではないことを理解しました。",
-                "I have reviewed the notices above. I understand that I should not enter direct personal identifiers and that this app does not automatically determine diagnosis or treatment.",
-            )
-        )
-
-        submitted = st.form_submit_button(
-            t(language, "送信", "Submit"),
-            use_container_width=True,
-        )
-
-    if submitted:
-        if not consent:
-            st.error(
+            consent = st.checkbox(
                 t(
                     language,
-                    "送信するには、利用上の注意を確認し、チェックボックスにチェックしてください。",
-                    "To submit, please review the notices and check the confirmation box.",
+                    "上記の注意事項を確認しました。直接個人情報を入力せず、本アプリの結果が診断・治療方針を自動決定するものではないことを理解しました。",
+                    "I have reviewed the notices above. I understand that I should not enter direct personal identifiers and that this app does not automatically determine diagnosis or treatment.",
                 )
             )
-            st.stop()
 
-        if result["instrument"] == "ADCT":
+            submitted = st.form_submit_button(
+                t(language, "送信", "Submit"),
+                use_container_width=True,
+            )
+
+        if submitted:
+            if not consent:
+                st.error(
+                    t(
+                        language,
+                        "送信するには、利用上の注意を確認し、チェックボックスにチェックしてください。",
+                        "To submit, please review the notices and check the confirmation box.",
+                    )
+                )
+                st.stop()
+
             if not re.fullmatch(r"[0-9]{3}", visit_code_digits or ""):
                 st.error(
                     t(
@@ -1134,29 +1019,22 @@ def main():
                 st.stop()
             visit_code = f"AD{visit_code_digits}"
 
-        now_dt = datetime.now(JST)
-        now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+            now_dt = datetime.now(JST)
+            now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
-        input_started_at = st.session_state.get("questionnaire_started_at", "")
-        input_duration_seconds = None
-        input_duration_minutes = None
+            input_started_at = st.session_state.get("questionnaire_started_at", "")
+            input_duration_seconds = None
+            input_duration_minutes = None
 
-        if input_started_at:
-            try:
-                started_dt = datetime.fromisoformat(str(input_started_at))
-                input_duration_seconds = round((now_dt - started_dt).total_seconds(), 1)
-                input_duration_minutes = round(input_duration_seconds / 60, 2)
-            except Exception:
-                input_duration_seconds = None
-                input_duration_minutes = None
+            if input_started_at:
+                try:
+                    started_dt = datetime.fromisoformat(str(input_started_at))
+                    input_duration_seconds = round((now_dt - started_dt).total_seconds(), 1)
+                    input_duration_minutes = round(input_duration_seconds / 60, 2)
+                except Exception:
+                    input_duration_seconds = None
+                    input_duration_minutes = None
 
-        previous_adct = None
-        delta_adct = None
-        decision = ""
-        decision_reasons = ""
-        adct_judgement = None
-
-        if result["instrument"] == "ADCT":
             previous_adct = get_previous_adct(visit_code)
             adct_judgement = judge_adct_control(
                 result["total_score"],
@@ -1166,59 +1044,58 @@ def main():
             )
             decision = adct_judgement["decision"]
             decision_reasons = " / ".join(adct_judgement["reasons"])
-
+            delta_adct = None
             if previous_adct is not None:
                 delta_adct = result["total_score"] - previous_adct
 
-        row = {
-            "timestamp": now,
-            "app_version": APP_VERSION,
-            "language": language,
-            "disease": result["disease"],
-            "instrument": result["instrument"],
-            "visit_code": visit_code,
-            "total_score": result["total_score"],
-            "max_score": result["max_score"],
-            "severity": result["severity"],
-            "previous_adct": previous_adct,
-            "delta_adct": delta_adct,
-            "decision": decision,
-            "decision_reasons": decision_reasons,
-            "input_started_at": input_started_at,
-            "input_submitted_at": now,
-            "input_duration_seconds": input_duration_seconds,
-            "input_duration_minutes": input_duration_minutes,
-            "input_support": result.get("input_support", ""),
-            "input_ease": result.get("input_ease", ""),
-            "consent_checked": True,
-        }
+            row = {
+                "timestamp": now,
+                "app_version": APP_VERSION,
+                "language": language,
+                "disease": result["disease"],
+                "instrument": result["instrument"],
+                "visit_code": visit_code,
+                "total_score": result["total_score"],
+                "max_score": result["max_score"],
+                "severity": result["severity"],
+                "previous_adct": previous_adct,
+                "delta_adct": delta_adct,
+                "decision": decision,
+                "decision_reasons": decision_reasons,
+                "input_started_at": input_started_at,
+                "input_submitted_at": now,
+                "input_duration_seconds": input_duration_seconds,
+                "input_duration_minutes": input_duration_minutes,
+                "input_support": result.get("input_support", ""),
+                "input_ease": result.get("input_ease", ""),
+                "consent_checked": True,
+            }
 
-        for i, score in enumerate(result["scores"], start=1):
-            row[f"q{i}_score"] = score
-            row[f"q{i}_answer"] = result["answers"][i - 1]
+            for i, score in enumerate(result["scores"], start=1):
+                row[f"q{i}_score"] = score
+                row[f"q{i}_answer"] = result["answers"][i - 1]
 
-        save_result(row)
-        send_to_google_form(row)
+            save_result(row)
+            send_to_google_form(row)
 
-        st.session_state["questionnaire_started_at"] = datetime.now(JST).isoformat()
-        st.session_state["questionnaire_timer_disease_mode"] = disease_mode
+            st.session_state["questionnaire_started_at"] = datetime.now(JST).isoformat()
+            st.session_state["questionnaire_timer_disease_mode"] = disease_mode
 
-        st.success(t(language, "送信されました。", "Submitted successfully."))
+            st.success(t(language, "送信されました。", "Submitted successfully."))
 
-        st.metric(
-            result["instrument"] + " " + t(language, "合計点", "total score"),
-            f"{result['total_score']} / {result['max_score']}",
-        )
-
-        st.caption(
-            t(
-                language,
-                "以下の表示は診療補助のための参考情報です。最終的な判断は医療者が行ってください。",
-                "The following display is reference information for clinical support. Final decisions should be made by a qualified healthcare professional.",
+            st.metric(
+                result["instrument"] + " " + t(language, "合計点", "total score"),
+                f"{result['total_score']} / {result['max_score']}",
             )
-        )
 
-        if result["instrument"] == "ADCT":
+            st.caption(
+                t(
+                    language,
+                    "以下の表示は診療補助のための参考情報です。最終的な判断は医療者が行ってください。",
+                    "The following display is reference information for clinical support. Final decisions should be made by a qualified healthcare professional.",
+                )
+            )
+
             st.markdown("---")
 
             if decision == "維持":
@@ -1251,38 +1128,27 @@ def main():
                     unsafe_allow_html=True,
                 )
 
-            if adct_judgement is not None:
-                st.subheader(adct_judgement["display_title"])
-                st.write(adct_judgement["message"])
+            st.subheader(adct_judgement["display_title"])
+            st.write(adct_judgement["message"])
 
-                if adct_judgement["reasons"]:
-                    st.markdown("**判定理由**" if language == "日本語" else "**Reasons for flagging**")
-                    for reason in adct_judgement["reasons"]:
-                        st.markdown(f"- {reason}")
-                else:
-                    st.caption(
-                        t(
-                            language,
-                            "ADCT総スコア、各項目スコア、前回比のいずれも非維持条件には該当しませんでした。",
-                            "The total ADCT score, item scores, and change from previous ADCT did not meet the non-maintenance criteria.",
-                        )
+            if adct_judgement["reasons"]:
+                st.markdown("**判定理由**" if language == "日本語" else "**Reasons for flagging**")
+                for reason in adct_judgement["reasons"]:
+                    st.markdown(f"- {reason}")
+            else:
+                st.caption(
+                    t(
+                        language,
+                        "ADCT総スコア、各項目スコア、前回比のいずれも非維持条件には該当しませんでした。",
+                        "The total ADCT score, item scores, and change from previous ADCT did not meet the non-maintenance criteria.",
                     )
+                )
 
             st.caption(
                 t(
                     language,
                     "「維持／非維持」はADCT回答に基づく簡易的な診療補助表示であり、治療継続・変更・中止を自動決定するものではありません。",
                     "The maintenance / non-maintenance display is a simplified clinical-support indicator based on ADCT responses and does not automatically determine whether treatment should be continued, changed, or stopped.",
-                )
-            )
-        else:
-            st.subheader(result["severity"])
-            st.write(result["interpretation"])
-            st.caption(
-                t(
-                    language,
-                    "DLQIの結果は生活の質への影響を把握するための参考情報です。診療判断は医療者が総合的に行ってください。",
-                    "The DLQI result is reference information for understanding quality-of-life impact. Clinical decisions should be made comprehensively by a qualified healthcare professional.",
                 )
             )
 
@@ -1317,13 +1183,14 @@ def main():
                     )
                 )
             elif admin_password == configured_password:
-                tab_adct, tab_dlqi = st.tabs(["ADCT", "DLQI"])
-
-                with tab_adct:
-                    show_csv_tab("ADCT", CSV_PATH_ADCT, "adct_results.csv")
-
-                with tab_dlqi:
-                    show_csv_tab("DLQI", CSV_PATH_DLQI, "dlqi_results.csv")
+                show_csv_tab("ADCT", CSV_PATH_ADCT, "adct_results.csv")
+                st.info(
+                    t(
+                        language,
+                        "DLQI機能はライセンス条件確認中のため無効化しています。DLQIの入力、送信、保存、CSV表示は行いません。",
+                        "The DLQI module is disabled while licensing conditions are under review. DLQI input, submission, storage, and CSV display are not provided.",
+                    )
+                )
 
             elif admin_password:
                 st.error(t(language, "パスワードが違います。", "Incorrect password."))
